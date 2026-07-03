@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Ping Pong Game</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #0f0;
+            font-family: monospace;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .game-container {
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin: 20px 0;
+            background-color: #000;
+        }
+        canvas {
+            display: block;
+            border: 1px solid #0f0;
+            background-color: #000;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .score {
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        .instructions {
+            text-align: center;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        button:hover {
+            background-color: #0f0;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Terminal Ping Pong Game</h1>
+        
+        <div class="game-container">
+            <canvas id="pongCanvas" width="800" height="400"></canvas>
+            <div class="score">
+                <span id="playerScore">0</span> - <span id="aiScore">0</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <p class="instructions">Use UP/DOWN arrow keys to move your paddle</p>
+            <button id="startBtn">Start Game</button>
+            <button id="pauseBtn">Pause</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+        
+        <div class="instructions">
+            <p>Connect to this server from your VM using: http://localhost:3000</p>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const canvas = document.getElementById('pongCanvas');
+        const ctx = canvas.getContext('2d');
+        const playerScoreElem = document.getElementById('playerScore');
+        const aiScoreElem = document.getElementById('aiScore');
+        
+        // Socket connection
+        const socket = io();
+        
+        let gameState = {
+            playerY: 0,
+            aiY: 0,
+            ballX: 0,
+            ballY: 0,
+            playerScore: 0,
+            aiScore: 0
+        };
+        
+        let gameRunning = true;
+        
+        // Draw the game
+        function drawGame() {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw borders
+            ctx.strokeStyle = '#0f0';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw center line (dashed)
+            ctx.setLineDash([5, 15]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw paddles
+            ctx.fillStyle = '#0f0';
+            ctx.fillRect(20, gameState.playerY * 10, 10, 50);
+            ctx.fillRect(canvas.width - 30, gameState.aiY * 10, 10, 50);
+            
+            // Draw ball
+            ctx.beginPath();
+            ctx.arc(gameState.ballX * 10, gameState.ballY * 10, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Handle keyboard input
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    socket.emit('playerMove', {direction: 'up'});
+                    break;
+                case 'ArrowDown':
+                    socket.emit('playerMove', {direction: 'down'});
+                    break;
+            }
+        });
+        
+        // Button controls
+        document.getElementById('startBtn').addEventListener('click', () => {
+            gameRunning = true;
+        });
+        
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            gameRunning = false;
+        });
+        
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            socket.emit('resetGame');
+        });
+        
+        // Receive updated game state from server
+        socket.on('gameState', (data) => {
+            gameState = data;
+            playerScoreElem.textContent = gameState.playerScore;
+            aiScoreElem.textContent = gameState.aiScore;
+            drawGame();
+        });
+    </script>
+</body>
+</html>
