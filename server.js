@@ -20,7 +20,7 @@ let gameState = {
   ballDY: 1,
   playerScore: 0,
   aiScore: 0,
-  gameRunning: true
+  gameRunning: false
 };
 
 // Game constants
@@ -52,6 +52,29 @@ io.on('connection', (socket) => {
     io.emit('gameState', gameState);
   });
   
+  // Handle start game
+  socket.on('startGame', () => {
+    gameState.gameRunning = true;
+    io.emit('gameState', gameState);
+  });
+
+  // Handle pause game
+  socket.on('pauseGame', () => {
+    gameState.gameRunning = false;
+    io.emit('gameState', gameState);
+  });
+
+  // Handle reset game
+  socket.on('resetGame', () => {
+    gameState.playerY = 15;
+    gameState.aiY = 15;
+    gameState.playerScore = 0;
+    gameState.aiScore = 0;
+    gameState.gameRunning = false;
+    resetBall();
+    io.emit('gameState', gameState);
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log('User disconnected');

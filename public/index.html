@@ -145,11 +145,11 @@
         
         // Button controls
         document.getElementById('startBtn').addEventListener('click', () => {
-            gameRunning = true;
+            socket.emit('startGame');
         });
         
         document.getElementById('pauseBtn').addEventListener('click', () => {
-            gameRunning = false;
+            socket.emit('pauseGame');
         });
         
         document.getElementById('resetBtn').addEventListener('click', () => {
@@ -159,6 +159,7 @@
         // Receive updated game state from server
         socket.on('gameState', (data) => {
             gameState = data;
+            gameRunning = data.gameRunning;
             playerScoreElem.textContent = gameState.playerScore;
             aiScoreElem.textContent = gameState.aiScore;
             drawGame();
